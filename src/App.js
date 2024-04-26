@@ -1,40 +1,44 @@
 import './App.css';
-import {useState, useEffect} from 'react'
+import {useState, useContext} from 'react'
+import useSWR from 'swr'
+
+const fetcher = (...args) => fetch(...args).then((response) => response.json());
 
 function App() {
 
   const [gameTitle, setGameTitle] = useState('');
   const [searchedGames, setSearchedGames] = useState([]);
-  const [gameDeals, setGameDeals] = useState([]);
+
+  const {data, error} = useSWR(
+    "https://www.cheapshark.com/api/1.0/deals?storeID=1&upperPrice=20&pageSize=3", 
+    fetcher 
+  );
 
   const searchGame = () => {
     fetch(`https://www.cheapshark.com/api/1.0/games?title=${gameTitle}&limit=3`)
     .then((response) => response.json())
     .then((data) => {
       setSearchedGames(data);
-      console.log(data);
     });
   };
 
-  useEffect(() => {
-    fetch(`https://www.cheapshark.com/api/1.0/deals?storeID=1&upperPrice=20&pageSize=3`)
-    .then((response) => response.json())
-    .then((data) => {
-      setGameDeals(data);
-      console.log(data);
-    });
-  }, [])
-
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      searchGame(); // Enter tuşuna basıldığında arama fonksiyonunu çağır
+    }
+  };
+   
   return (
     <div className="App">
       <div className="search-section">
         <h1>Search For A Game</h1>
         <input 
           type="text" 
-          placeholder="Minecraft..." 
+          placeholder="Search game..."
           onChange={(event) => {
             setGameTitle(event.target.value);
           }}
+          onKeyDown={handleKeyDown}
         />
         <button onClick={searchGame}>Search Game Title</button>
 
@@ -53,7 +57,8 @@ function App() {
       <div className="deals-section">
         <h1>Lastest Deals</h1>
         <div className="games">
-          {gameDeals.map((game, key) => {
+          {data &&
+            data.map((game, key) => {
             return (
             <div className="game" id="deals" key={key}>
               <h3>{game.title}</h3>
